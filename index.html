@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>JEREMY BINGO!!!</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: clamp(20px, 3vw, 32px);
+    }
+
+    .bingo {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      width: min(90vw, 600px);
+      aspect-ratio: 1 / 1;
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+
+    .cell {
+      background: white;
+      border: 2px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-size: clamp(10px, 2.2vw, 16px);
+      font-weight: bold;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      padding: 5px;
+    }
+
+    .circle {
+      position: absolute;
+      width: 80%;
+      height: 80%;
+      background: rgba(135, 206, 250, 0.3); /* Light blue */
+      border-radius: 50%;
+      border: 2px solid rgba(70, 130, 180, 0.5); /* Slightly darker outline */
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .cell span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cell img {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+      position: relative;
+      z-index: 2;
+    }
+
+    .free-space {
+      background: #ffd;
+      cursor: default;
+    }
+
+    .free-space img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.50;
+      pointer-events: none;
+    }
+
+    .free-space span {
+      position: relative;
+      z-index: 1;
+      font-size: clamp(12px, 2.5vw, 18px);
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: clamp(14px, 2.5vw, 18px);
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      background: #333;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>JEREMY BINGO!!!</h1>
+  <div class="bingo" id="bingo"></div>
+  <button onclick="generateCard()">New Card</button>
+
+  <script>
+    const prompts = [
+      "Describes Something Insane", "Apologises For Going On A Long Tangent", "Gets Really Excited", "Does A Planned Bit",
+      "'Go Eat'", "'Shoo'", "Speaks Over The Video", "Mentions Something Modern He 'Shouldn't Know'",
+      "Chat Acts Like Twitch Chat", "Implies He's Sadistic", "'Weeeeellll...'", "Jeremy Gets Woke",
+      "Plays Someone's Student Film", "Jeremy Takes Mercy On Us", "'Fabulous'", "Inspirational Message",
+      "Plays A Music Video Or Band", "Gen Z/Alpha Slang Used", "One More One More Thing", "One More Thing",
+      "Tells an Anecdote", "Goes On A Long Tangent",
+      "Class Ends Before 6:45",
+      "Class Ends After 6:45"
+    ];
+
+    const images = [
+      "images/BaldJer.png", "images/BeetleJuiceJer.png", "images/BoCJer.png", "images/BowlJer.png",
+      "images/BusinessJer.png", "images/ChilliJer.png", "images/CoffJer.png", "images/DiscoJer.png",
+      "images/DJer.png", "images/EvilJer.png", "images/FancyJer.png", "images/GlorpyJer.png",
+      "images/HardcoreJer.png", "images/SithJer.png", "images/MermJer.png", "images/WHMIJer.png",
+      "images/MusicJer.png", "images/OptoJer.png", "images/OTHIJer.png", "images/OurBlessJer.png",
+      "images/ShrimpJer.png", "images/STLJer.png", "images/WDHGJer.png", "images/StudiJer.png"
+      //PUT MORE SHIT HERE BY BEING LIKE COMMA AND YOUR SHIT 
+    ];
+
+    const freeSpaceImage = "images/KingJer.png";
+
+    function shuffle(array) {
+      let arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function insertFreeSpace(prompts) {
+      let grid = [...prompts];
+      grid.splice(12, 0, "FREE");
+      return grid;
+    }
+
+    function promptsAligned(grid) {
+      const beforeIdx = grid.indexOf("Class Ends Before 6:45");
+      const afterIdx = grid.indexOf("Class Ends After 6:45");
+
+      const beforeRow = Math.floor(beforeIdx / 5);
+      const beforeCol = beforeIdx % 5;
+      const afterRow = Math.floor(afterIdx / 5);
+      const afterCol = afterIdx % 5;
+
+      if (beforeRow === afterRow) return true;
+      if (beforeCol === afterCol) return true;
+      if (beforeRow - beforeCol === afterRow - afterCol) return true;
+      if (beforeRow + beforeCol === afterRow + afterCol) return true;
+
+      return false;
+    }
+
+function generateCard() {
+  const grid = document.getElementById("bingo");
+  grid.innerHTML = "";
+
+  let shuffledPrompts;
+  do {
+    shuffledPrompts = shuffle(prompts);
+  } while (promptsAligned(insertFreeSpace(shuffledPrompts)));
+
+  // Take exactly 24 images (non-free cells)
+  const shuffledImages = shuffle(images).slice(0, 24);
+
+  let cellIndex = 0;
+
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+
+      if (row === 2 && col === 2) {
+        // Free space
+        cell.classList.add("free-space");
+        const img = document.createElement("img");
+        img.src = freeSpaceImage;
+        const span = document.createElement("span");
+        span.textContent = "Free Space";
+        cell.appendChild(img);
+        cell.appendChild(span);
+      } else {
+        const prompt = shuffledPrompts[cellIndex];
+        const image = shuffledImages[cellIndex]; // unique image per cell
+
+        const circle = document.createElement("div");
+        circle.classList.add("circle");
+        const span = document.createElement("span");
+        span.textContent = prompt;
+
+        cell.appendChild(circle);
+        cell.appendChild(span);
+
+        let showingImage = false;
+
+        cell.addEventListener("click", () => {
+          if (!showingImage) {
+            cell.innerHTML = `<img src="${image}" alt="bingo image">`;
+            showingImage = true;
+          } else {
+            cell.innerHTML = "";
+            cell.appendChild(circle.cloneNode(true));
+            const spanNew = document.createElement("span");
+            spanNew.textContent = prompt;
+            cell.appendChild(spanNew);
+            showingImage = false;
+          }
+        });
+
+        cellIndex++;
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+}
+
+
+    generateCard();
+  </script>
+</body>
+</html>
